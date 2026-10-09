@@ -1,0 +1,61 @@
+{
+  "name": "@fringeworks/async-wrappers",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A library some will find handy, offering wrappers that add caching, retries, timeouts, and fallbacks to async functions.",
+  "keywords": [
+    "async",
+    "promise",
+    "retry",
+    "timeout",
+    "cache",
+    "fallback"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fringeworks-js/async-wrappers.git"
+  },
+  "license": "MIT",
+  "author": "Mitsuhiro Seino",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./*": "./src/*/index.ts"
+  },
+  "main": "./src/index.ts",
+  "module": "./src/index.ts",
+  "scripts": {
+    "build": "tsdown",
+    "check": "tsc --noEmit",
+    "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json}\"",
+    "indexes": "tsx scripts/indexes.ts",
+    "test": "vitest",
+    "tidy": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json}\" --config ./prettier.tidy.config.ts"
+  },
+  "dependencies": {
+    "@fringeworks/types": "^0.8.0",
+    "tslib": "^2.8.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@fringeworks/dev": "^0.9.1",
+    "@fringeworks/rollup-plugin-dist-package": "^0.8.0",
+    "@types/node": "^25.5.0",
+    "@typescript-eslint/eslint-plugin": "^8.59.2",
+    "@typescript-eslint/parser": "^8.59.2",
+    "@vitest/coverage-v8": "^4.1.8",
+    "eslint": "^10.3.0",
+    "fast-glob": "^3.3.3",
+    "prettier": "^3.8.3",
+    "prettier-plugin-organize-imports": "^4.3.0",
+    "prettier-plugin-packagejson": "^3.0.2",
+    "rimraf": "^6.1.3",
+    "rollup-plugin-copy": "^3.5.0",
+    "tsdown": "^0.22.0",
+    "tsx": "^4.22.3",
+    "typescript": "^6.0.2",
+    "typescript-eslint": "^8.59.2",
+    "vitest": "^4.1.8"
+  },
+  "packageManager": "pnpm@12.3.4+sha512.961aa41fb077da3a04a441d9f8e15ebc0c96da8ef710b2eb67bf9ee7cb0610eabd48f1fd85f51cffe73846785fa0f87c56a3a872a1d893f8446741b5cce45457"
+}
