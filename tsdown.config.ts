@@ -39,6 +39,7 @@ export default defineConfig({
         }),
       },
       resolveWorkspaceDeps: true,
+      range: '^',
     }),
     copy({
       targets: [
