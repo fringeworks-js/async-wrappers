@@ -1,4 +1,3 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import withRetry from './withRetry';
 
 describe('withRetry', () => {
@@ -89,6 +88,21 @@ describe('withRetry', () => {
       // 初回 + 2 リトライ = 3 回
       expect(fn).toHaveBeenCalledTimes(3);
     });
+
+    it.each([
+      ['小数', 1.5, 2],
+      ['負の値', -1, 1],
+      ['NaN', NaN, 1],
+    ])(
+      'maxRetries が%sのとき、切り捨て・0 として扱い元のエラーを throw する',
+      async (_, maxRetries, calls) => {
+        const fn = alwaysFail('real');
+        const wrapped = withRetry(fn, maxRetries);
+
+        await runWithTimers(expect(wrapped()).rejects.toThrow('real'));
+        expect(fn).toHaveBeenCalledTimes(calls);
+      },
+    );
 
     it('maxRetries が 0 のときリトライなしで即 throw する', async () => {
       const fn = alwaysFail('no retry');
@@ -286,6 +300,23 @@ describe('withRetry', () => {
       await promise;
 
       expect(fn).toHaveBeenCalledTimes(3);
+    });
+
+    it('待機時間は setTimeout の最大値を超えない', async () => {
+      vi.spyOn(Math, 'random').mockReturnValue(1);
+      const setTimeoutSpy = vi.spyOn(globalThis, 'setTimeout');
+
+      const fn = failTimes(2);
+      const wrapped = withRetry(fn, 3, {
+        delay: 2 ** 31,
+        exponentialBackoff: true,
+      });
+
+      await runWithTimers(wrapped());
+      expect(setTimeoutSpy.mock.calls.map(([, ms]) => ms)).toEqual([
+        2 ** 31 - 1,
+        2 ** 31 - 1,
+      ]);
     });
 
     it('exponentialBackoff が true でも delay=0 なら setTimeout を呼ばない', async () => {

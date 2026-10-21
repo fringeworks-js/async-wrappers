@@ -1,4 +1,3 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { WithCacheEntry, WithCacheStore } from './types';
 import withCache from './withCache';
 
@@ -120,6 +119,22 @@ describe('withCache', () => {
       expect(fn).toHaveBeenCalledTimes(2);
     });
 
+    it.each([0, -1])(
+      'ttl が %d のときは保存せず、処理中の呼び出しだけを共有する',
+      async (ttl) => {
+        const store = new Map<string, WithCacheEntry<number>>();
+        const fn = vi.fn(async (x: number) => x * 2);
+        const cached = withCache(fn, { ttl, store });
+
+        await Promise.all([cached(1), cached(1)]);
+        expect(fn).toHaveBeenCalledTimes(1);
+        expect(store.size).toBe(0);
+
+        await cached(1);
+        expect(fn).toHaveBeenCalledTimes(2);
+      },
+    );
+
     it('ttl を省略した場合は無期限にキャッシュされる', async () => {
       const fn = vi.fn(async () => 'value');
       const cached = withCache(fn);
@@ -138,6 +153,147 @@ describe('withCache', () => {
       await expect(cached()).resolves.toBe('value-1');
       vi.advanceTimersByTime(1001);
       await expect(cached()).resolves.toBe('value-2');
+    });
+  });
+
+  // -----------------------------------------------------------------
+  // 期限切れのエントリーの削除
+  // -----------------------------------------------------------------
+
+  describe('期限切れのエントリーの削除', () => {
+    it('呼び出しのたびに、他のキーの期限切れのエントリーも store から削除する', async () => {
+      const store = new Map<string, WithCacheEntry<number>>();
+      const fn = vi.fn(async (x: number) => x * 2);
+      const cached = withCache(fn, { ttl: 1000, store });
+
+      await cached(1);
+      vi.advanceTimersByTime(500);
+      await cached(2);
+      expect([...store.keys()]).toEqual(['[1]', '[2]']);
+
+      // [1] だけが期限切れ
+      vi.advanceTimersByTime(501);
+      await cached(3);
+      expect([...store.keys()]).toEqual(['[2]', '[3]']);
+
+      // [2] と [3] が期限切れ
+      vi.advanceTimersByTime(1001);
+      await cached(4);
+      expect([...store.keys()]).toEqual(['[4]']);
+    });
+
+    it('期限切れ後に再取得したキーは、新しい期限で並び直す', async () => {
+      const store = new Map<string, WithCacheEntry<number>>();
+      const fn = vi.fn(async (x: number) => x * 2);
+      const cached = withCache(fn, { ttl: 1000, store });
+
+      await cached(1);
+      vi.advanceTimersByTime(500);
+      await cached(2);
+      vi.advanceTimersByTime(501);
+      // [1] は期限切れなので再取得され、[2] より後ろに並ぶ
+      await cached(1);
+      expect(fn).toHaveBeenCalledTimes(3);
+
+      // [2] だけが期限切れ
+      vi.advanceTimersByTime(500);
+      await cached(3);
+      expect([...store.keys()]).toEqual(['[1]', '[3]']);
+    });
+
+    it('ラッパーが保存していないエントリーは、期限切れでも呼び出されるまで削除しない', async () => {
+      const store = new Map<string, WithCacheEntry<string>>([
+        ['external', { value: 'old', expiresAt: Date.now() - 1 }],
+      ]);
+      const cached = withCache(async () => 'fresh', { ttl: 1000, store });
+
+      await cached();
+      expect(store.has('external')).toBe(true);
+    });
+  });
+
+  // -----------------------------------------------------------------
+  // maxEntries
+  // -----------------------------------------------------------------
+
+  describe('maxEntries', () => {
+    it('上限を超えたら、古く保存したものから削除する', async () => {
+      const store = new Map<string, WithCacheEntry<number>>();
+      const fn = vi.fn(async (x: number) => x * 2);
+      const cached = withCache(fn, { maxEntries: 2, store });
+
+      await cached(1);
+      await cached(2);
+      await cached(3);
+      expect([...store.keys()]).toEqual(['[2]', '[3]']);
+
+      await cached(1);
+      expect(fn).toHaveBeenCalledTimes(4);
+    });
+
+    it('キャッシュから返しても並び順は変えない（使った順ではなく保存した順）', async () => {
+      const store = new Map<string, WithCacheEntry<number>>();
+      const fn = vi.fn(async (x: number) => x * 2);
+      const cached = withCache(fn, { maxEntries: 2, store });
+
+      await cached(1);
+      await cached(2);
+      await cached(1); // キャッシュから返す
+      await cached(3);
+      expect([...store.keys()]).toEqual(['[2]', '[3]']);
+    });
+
+    it('カスタム store でも上限を超えたら delete を呼ぶ', async () => {
+      const store: WithCacheStore<number> = {
+        get: vi.fn().mockReturnValue(undefined),
+        set: vi.fn(),
+        delete: vi.fn(),
+      };
+      const cached = withCache(async (x: number) => x, {
+        maxEntries: 1,
+        store,
+      });
+
+      await cached(1);
+      await cached(2);
+      expect(store.delete).toHaveBeenCalledWith('[1]');
+    });
+
+    it('小数は切り捨てる', async () => {
+      const store = new Map<string, WithCacheEntry<number>>();
+      const cached = withCache(async (x: number) => x, {
+        maxEntries: 1.9,
+        store,
+      });
+
+      await cached(1);
+      await cached(2);
+      expect([...store.keys()]).toEqual(['[2]']);
+    });
+
+    it.each([0, -1, 0.5])(
+      'maxEntries が %d のときは保存せず、処理中の呼び出しだけを共有する',
+      async (maxEntries) => {
+        const store = new Map<string, WithCacheEntry<number>>();
+        const fn = vi.fn(async (x: number) => x * 2);
+        const cached = withCache(fn, { maxEntries, store });
+
+        await Promise.all([cached(1), cached(1)]);
+        expect(fn).toHaveBeenCalledTimes(1);
+        expect(store.size).toBe(0);
+      },
+    );
+
+    it('NaN のときは上限なしとして扱う', async () => {
+      const store = new Map<string, WithCacheEntry<number>>();
+      const cached = withCache(async (x: number) => x, {
+        maxEntries: NaN,
+        store,
+      });
+
+      await cached(1);
+      await cached(2);
+      expect(store.size).toBe(2);
     });
   });
 
@@ -312,6 +468,22 @@ describe('withCache', () => {
 
       await expect(cached()).resolves.toBe('cached');
       expect(fn).not.toHaveBeenCalled();
+    });
+
+    it('store.set が throw した場合、そのエラーで reject し次の呼び出しで再実行する', async () => {
+      const store: WithCacheStore<string> = {
+        get: vi.fn().mockReturnValue(undefined),
+        set: vi.fn(() => {
+          throw new Error('quota');
+        }),
+        delete: vi.fn(),
+      };
+      const fn = vi.fn(async () => 'fresh');
+      const cached = withCache(fn, { store });
+
+      await expect(cached()).rejects.toThrow('quota');
+      await expect(cached()).rejects.toThrow('quota');
+      expect(fn).toHaveBeenCalledTimes(2);
     });
 
     it('期限切れエントリは store から削除される', async () => {

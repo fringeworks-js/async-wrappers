@@ -1,6 +1,9 @@
 import type { AsyncFunction } from '@fringeworks/types';
 import type { WithRetryOptions } from './types';
 
+// setTimeout の最大値（約24.8日）。超えるとすぐに発火するため、待ち時間をこの値に収める
+const MAX_DELAY = 2 ** 31 - 1;
+
 /**
  * 非同期関数にリトライ処理を付与するラッパー
  *
@@ -8,7 +11,8 @@ import type { WithRetryOptions } from './types';
  * リトライの間隔・バックオフ・中止条件はオプションで細かく制御できる。
  *
  * @param fn リトライ対象の非同期関数
- * @param maxRetries 最大リトライ回数（合計試行回数は `maxRetries + 1`）
+ * @param maxRetries 最大リトライ回数（合計試行回数は `maxRetries + 1`）。
+ * 小数は切り捨て、負の値と `NaN` は `0` として扱う
  * @param options リトライの挙動を制御するオプション
  * @returns 元の関数と同じシグネチャを持つラップされた非同期関数
  *
@@ -36,12 +40,15 @@ export default function withRetry<T extends unknown[], R>(
     onRetry,
   } = options;
 
+  // NaN は比較が false になるため 0 になる
+  const retryLimit = maxRetries > 0 ? Math.floor(maxRetries) : 0;
+
   return async (...args: T): Promise<R> => {
-    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    for (let attempt = 0; ; attempt++) {
       try {
         return await fn(...args);
       } catch (err) {
-        const isLast = attempt === maxRetries;
+        const isLast = attempt >= retryLimit;
         const retries = attempt + 1;
         if (isLast || !shouldRetry(err, retries)) {
           throw err;
@@ -53,10 +60,11 @@ export default function withRetry<T extends unknown[], R>(
           const wait = exponentialBackoff
             ? delay * 2 ** attempt * (0.5 + Math.random() * 0.5)
             : delay;
-          await new Promise((resolve) => setTimeout(resolve, wait));
+          await new Promise((resolve) =>
+            setTimeout(resolve, Math.min(wait, MAX_DELAY)),
+          );
         }
       }
     }
-    throw new Error('Unreachable');
   };
 }

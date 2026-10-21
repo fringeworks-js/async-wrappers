@@ -5,6 +5,9 @@ export type WithRetryOptions = {
   /**
    * リトライ間の待機時間（ミリ秒）
    *
+   * `exponentialBackoff` で延ばした場合も含め、`setTimeout` の最大値
+   * （2^31 - 1 ミリ秒、約24.8日）を上限とする。
+   *
    * @default 0
    */
   delay?: number;
