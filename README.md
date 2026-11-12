@@ -8,8 +8,6 @@
 
 ```bash
 npm install @fringeworks/async-wrappers
-# or
-pnpm add @fringeworks/async-wrappers
 ```
 
 ## Usage
@@ -202,13 +200,14 @@ const fetchDataWithTimeout = withTimeout(fetchData, 5000);
 
 ### Types
 
-| Type                     | Description                                       |
-| ------------------------ | ------------------------------------------------- |
-| `WithCacheOptions<T, R>` | Options for `withCache`                           |
-| `WithCacheStore<R>`      | The interface of the cache store for `withCache`  |
-| `WithCacheEntry<R>`      | An entry kept in the store `{ value, expiresAt }` |
-| `WithFallbackOptions`    | Options for `withFallback`                        |
-| `WithRetryOptions`       | Options for `withRetry`                           |
+| Type                     | Description                                                                                                             |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------------------- |
+| `AsyncFunction<T, R>`    | The type of the functions each wrapper takes and returns, `(...args: T) => Promise<R>` (a type of `@fringeworks/types`) |
+| `WithCacheOptions<T, R>` | Options for `withCache`                                                                                                 |
+| `WithCacheStore<R>`      | The interface of the cache store for `withCache`                                                                        |
+| `WithCacheEntry<R>`      | An entry kept in the store `{ value, expiresAt }`                                                                       |
+| `WithFallbackOptions`    | Options for `withFallback`                                                                                              |
+| `WithRetryOptions`       | Options for `withRetry`                                                                                                 |
 
 ## License
 

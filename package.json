@@ -1,6 +1,6 @@
 {
   "name": "@fringeworks/async-wrappers",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "private": true,
   "description": "A library some will find handy, offering wrappers that add caching, retries, timeouts, and fallbacks to async functions.",
   "keywords": [
@@ -36,19 +36,19 @@
     "tidy": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json}\" --config ./prettier.tidy.config.ts"
   },
   "dependencies": {
-    "@fringeworks/types": "^1.1.1",
-    "@fringeworks/utils": "^2.2.0"
+    "@fringeworks/types": "^1.2.0",
+    "@fringeworks/utils": "^2.3.0"
   },
   "devDependencies": {
-    "@fringeworks/dev": "^0.13.3",
+    "@fringeworks/dev": "^0.13.4",
     "@types/node": "^25.9.9",
-    "@vitest/coverage-v8": "^4.1.11",
-    "eslint": "^10.12.0",
+    "@vitest/coverage-v8": "^4.1.12",
+    "eslint": "^10.14.0",
     "prettier": "^3.9.10",
-    "tsdown": "^0.23.1",
+    "tsdown": "^0.23.7",
     "tsx": "^4.23.15",
     "typescript": "^6.0.3",
-    "vitest": "^4.1.11"
+    "vitest": "^4.1.12"
   },
   "packageManager": "pnpm@12.3.4+sha512.961aa41fb077da3a04a441d9f8e15ebc0c96da8ef710b2eb67bf9ee7cb0610eabd48f1fd85f51cffe73846785fa0f87c56a3a872a1d893f8446741b5cce45457"
 }

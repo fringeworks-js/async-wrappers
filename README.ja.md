@@ -8,8 +8,6 @@
 
 ```bash
 npm install @fringeworks/async-wrappers
-# または
-pnpm add @fringeworks/async-wrappers
 ```
 
 ## 使い方
@@ -202,13 +200,14 @@ const fetchDataWithTimeout = withTimeout(fetchData, 5000);
 
 ### 型
 
-| 型                       | 説明                                               |
-| ------------------------ | -------------------------------------------------- |
-| `WithCacheOptions<T, R>` | `withCache` のオプション                           |
-| `WithCacheStore<R>`      | `withCache` のキャッシュの保存先のインターフェイス |
-| `WithCacheEntry<R>`      | 保存先に格納するエントリー `{ value, expiresAt }`  |
-| `WithFallbackOptions`    | `withFallback` のオプション                        |
-| `WithRetryOptions`       | `withRetry` のオプション                           |
+| 型                       | 説明                                                                                             |
+| ------------------------ | ------------------------------------------------------------------------------------------------ |
+| `AsyncFunction<T, R>`    | 各ラッパーが受け取る関数と返す関数の型 `(...args: T) => Promise<R>`（`@fringeworks/types` の型） |
+| `WithCacheOptions<T, R>` | `withCache` のオプション                                                                         |
+| `WithCacheStore<R>`      | `withCache` のキャッシュの保存先のインターフェイス                                               |
+| `WithCacheEntry<R>`      | 保存先に格納するエントリー `{ value, expiresAt }`                                                |
+| `WithFallbackOptions`    | `withFallback` のオプション                                                                      |
+| `WithRetryOptions`       | `withRetry` のオプション                                                                         |
 
 ## ライセンス
 
